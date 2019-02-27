@@ -50,7 +50,7 @@ db.connect((err) => {
 });
 
 app.get('/get/list', (req, res) => {
-    let query = 'SELECT p.item, l.user, l.date, p.price FROM prices p, list l  WHERE p.item = l.item ORDER BY date DESC;';
+    let query = 'SELECT l.item, l.user, l.date, l.id, p.price FROM prices p, list l  WHERE p.item = l.item ORDER BY date DESC;';
     db.query(query, (err, result) => {
         if(err) throw err;
         res.send(result);
@@ -61,7 +61,7 @@ app.get('/get/list', (req, res) => {
 app.get('/get/registeredItems', (req, res) => {
    let query = 'SELECT item FROM prices';
    db.query(query, (err, result) => {
-       if(err) throw err
+       if(err) throw err;
        res.send(result);
    })
 });
@@ -69,32 +69,46 @@ app.get('/get/registeredItems', (req, res) => {
 app.post('/post/register', (req, res) => {
    let item = req.body.item;
    let price = req.body.price;
+    console.log('somebody trying to register new item: ' + item + ' with a price of ' + price);
     db.query( 'INSERT IGNORE INTO prices VALUES (?, ?);', [item, price],  (err, result) => {
         if(err) throw err;
-        // console.log(result);
+         console.log('registered succesfully!');
         res.json(req.body).status(200);
     });
 
+});
+
+app.post('/post/buyItem', (req, res) => {
+    let user = req.body.user;
+    let item = req.body.item;
+    let price = req.body.price;
+    console.log(user + ' trying to buy ' + item + '..');
+    db.query( 'INSERT INTO history (item, user, price, date) VALUES (?, ?, ?, CURRENT_TIMESTAMP());', [item, user, price], (err, result) =>{
+        if(err) throw err;
+        console.log('..transaction logged succesfully!');
+        res.json({message:'Query OK'}).status(200);
+    });
 });
 
 app.post('/post/item', (req, res) => {
     //console.log(req.body);
     let item = req.body.item;
     let user = req.body.user;
-    db.query( 'INSERT IGNORE INTO list (item, user, date) VALUES (?, ?, CURRENT_TIMESTAMP());', [item, user],  (err, result) => {
+    console.log(user + ' is adding a '+ item + ' to the list...');
+    db.query( 'INSERT INTO list (item, user, date) VALUES (?, ?, CURRENT_TIMESTAMP());', [item, user],  (err, result) => {
         if(err) throw err;
-        // console.log(result);
-        res.json(req.body).status(200);
+        console.log('..succesfully added!');
+        res.json({message:'Query OK'}).status(200);
     });
 });
 
 app.delete('/delete/item', (req, res) => {
-    console.log(req.body);
+   let id = req.body.id;
    let item = req.body.item;
-   console.log('poistettava esine: ' + item);
-   db.query('DELETE FROM list WHERE item=?', [item], (err, result) => {
+    console.log('somebody trying to delete ' + item + ' from the list..');
+   db.query('DELETE FROM list WHERE id=?', [id], (err, result) => {
        if(err) throw err;
-      // console.log(result);
+      console.log('..deletion succesful!');
        res.json(req.body).status(200);
    })
 });
