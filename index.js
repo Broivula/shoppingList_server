@@ -1,6 +1,7 @@
 'use strict';
-require('dotenv').config()
+require('dotenv').config();
 const express = require('express');
+const app = express();
 const multer = require('multer');
 const mysql = require('mysql');
 const bodyParser = require('body-parser');
@@ -13,21 +14,33 @@ const db = mysql.createConnection({
     database: process.env.DB
 });
 
-const app = express();
-const http = require('http').Server(app);
-const server = app.listen(2222 ,() => {console.log('server running on port 2222')});
+const server = require('http').createServer(app);
 const io = require('socket.io').listen(server);
 
+app.use(function(req, res, next)
+{
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST');
+    res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type,Authorization');
+    next();
+});
+
+/*
+io.on('connection', (socket) => {
+   console.log('new connection with and id ' + socket.id);
+
+   socket.on('new_item', (data) => {
+      console.log('message: ' + data);
+       io.emit('new_item', {item:data.item, event:'new_item'});
+       console.log('new item sent!');
+   })
+
+});
+*/
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
-io.on('connection', (socket) => {
-    socket.on('message', (message) => {
-        console.log('kikkel');
-    });
-    console.log('a user has connected.');
-});
 
 db.connect((err) => {
     if(err){
@@ -36,12 +49,32 @@ db.connect((err) => {
     console.log('mysql connected..');
 });
 
-app.get('/list', (req, res) => {
-    let query = 'SELECT * FROM list ORDER BY date DESC;';
+app.get('/get/list', (req, res) => {
+    let query = 'SELECT p.item, l.user, l.date, p.price FROM prices p, list l  WHERE p.item = l.item ORDER BY date DESC;';
     db.query(query, (err, result) => {
         if(err) throw err;
         res.send(result);
     })
+});
+
+
+app.get('/get/registeredItems', (req, res) => {
+   let query = 'SELECT item FROM prices';
+   db.query(query, (err, result) => {
+       if(err) throw err
+       res.send(result);
+   })
+});
+
+app.post('/post/register', (req, res) => {
+   let item = req.body.item;
+   let price = req.body.price;
+    db.query( 'INSERT IGNORE INTO prices VALUES (?, ?);', [item, price],  (err, result) => {
+        if(err) throw err;
+        // console.log(result);
+        res.json(req.body).status(200);
+    });
+
 });
 
 app.post('/post/item', (req, res) => {
@@ -50,8 +83,7 @@ app.post('/post/item', (req, res) => {
     let user = req.body.user;
     db.query( 'INSERT IGNORE INTO list (item, user, date) VALUES (?, ?, CURRENT_TIMESTAMP());', [item, user],  (err, result) => {
         if(err) throw err;
-       // console.log(result);
-        io.emit('message', req.body);
+        // console.log(result);
         res.json(req.body).status(200);
     });
 });
@@ -67,5 +99,5 @@ app.delete('/delete/item', (req, res) => {
    })
 });
 
-
+server.listen(2222 ,() => {console.log('server running on port 2222')});
 
