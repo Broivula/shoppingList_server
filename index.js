@@ -50,7 +50,7 @@ db.connect((err) => {
 });
 
 app.get('/get/list', (req, res) => {
-    let query = 'SELECT l.item, l.user, l.date, l.id, p.price FROM prices p, list l  WHERE p.item = l.item ORDER BY date DESC;';
+    let query = 'SELECT l.item, l.user, l.date, l.id, p.price FROM prices p, list l  WHERE p.item = l.item ORDER BY l.item;';
     db.query(query, (err, result) => {
         if(err) throw err;
         res.send(result);
@@ -59,7 +59,7 @@ app.get('/get/list', (req, res) => {
 
 
 app.get('/get/registeredItems', (req, res) => {
-   let query = 'SELECT item FROM prices';
+   let query = 'SELECT * FROM prices';
    db.query(query, (err, result) => {
        if(err) throw err;
        res.send(result);
