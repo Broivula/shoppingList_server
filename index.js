@@ -113,5 +113,15 @@ app.delete('/delete/item', (req, res) => {
    })
 });
 
+
+//just a function to keep the db connection up
+setInterval(() =>{
+    db.query('SELECT * FROM prices', (err, result) =>{
+        if(err) throw err;
+        //console.log('just keeping up the connection to the database..')
+    })
+}, 100000);
+
+
 server.listen(2222 ,() => {console.log('server running on port 2222')});
 
