@@ -5,6 +5,8 @@ const app = express();
 const multer = require('multer');
 const mysql = require('mysql');
 const bodyParser = require('body-parser');
+const fs = require('fs');
+const spawn = require('child_process').spawn;
 
 
 const db = mysql.createConnection({
@@ -54,7 +56,9 @@ app.get('/get/list', (req, res) => {
     db.query(query, (err, result) => {
         if(err) throw err;
         res.send(result);
-    })
+    });
+
+
 });
 
 
@@ -64,6 +68,38 @@ app.get('/get/registeredItems', (req, res) => {
        if(err) throw err;
        res.send(result);
    })
+});
+
+app.get('/get/history', (req, res) => {
+    console.log('python fetching history...');
+   let query = 'SELECT * FROM history';
+   db.query(query, (err, result) =>{
+     if(err) throw err;
+     console.log('sent history to the python script!');
+     res.json(result);
+   })
+});
+
+app.get('/get/history/images', (req, res) => {
+   console.log('getting stat images routes');
+   let file_path_obj = { file_path:'http://localhost:8100/node/get/history/images/kulutus_all_time.png'};
+    const process = spawn('python3', ["data_handler.py"]);
+    process.stdout.on('data', (data) => {
+        res.json([file_path_obj])
+    });
+
+});
+
+
+
+app.get('/get/history/images/:dest', (req, res) =>{
+    let date= new Date();
+    let month = (date.getUTCMonth()+1) <10 ? '0'+ (date.getUTCMonth()+1) : date.getUTCMonth()+1;
+    let day = date.getUTCDate();
+    let year = date.getUTCFullYear();
+    let fulldate = year + '-' + month + '-' + day +'/';
+
+    res.sendFile(req.params.dest, {root:__dirname + "/uploads/" + fulldate});
 });
 
 app.post('/post/register', (req, res) => {
