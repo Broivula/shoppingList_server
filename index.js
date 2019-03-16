@@ -82,7 +82,7 @@ app.get('/get/history', (req, res) => {
 
 app.get('/get/history/images', (req, res) => {
    console.log('getting stat images routes');
-   let file_path_obj = { file_path:'http://localhost:8100/node/get/history/images/kulutus_all_time.png'};
+   let file_path_obj = { file_path:'http://192.168.8.101/node/get/history/images/kulutus_all_time.png'};
     const process = spawn('python3', ["data_handler.py"]);
     process.stdout.on('data', (data) => {
         res.json([file_path_obj])
