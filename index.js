@@ -71,11 +71,9 @@ app.get('/get/registeredItems', (req, res) => {
 });
 
 app.get('/get/history', (req, res) => {
-    console.log('python fetching history...');
    let query = 'SELECT * FROM history';
    db.query(query, (err, result) =>{
      if(err) throw err;
-     console.log('sent history to the python script!');
      res.json(result);
    })
 });
@@ -97,7 +95,7 @@ app.get('/get/history/images', (req, res) => {
 app.get('/get/history/images/:dest', (req, res) =>{
     let date= new Date();
     let month = (date.getUTCMonth()+1) <10 ? '0'+ (date.getUTCMonth()+1) : date.getUTCMonth()+1;
-    let day = date.getUTCDate();
+    let day = date.getUTCDate() < 10 ? '0'+ date.getUTCDate() : date.getUTCDate();
     let year = date.getUTCFullYear();
     let fulldate = year + '-' + month + '-' + day +'/';
 
@@ -107,11 +105,16 @@ app.get('/get/history/images/:dest', (req, res) =>{
 app.post('/post/register', (req, res) => {
    let item = req.body.item;
    let price = req.body.price;
+   let user = req.body.user;
     console.log('somebody trying to register new item: ' + item + ' with a price of ' + price);
     db.query( 'INSERT IGNORE INTO prices VALUES (?, ?);', [item, price],  (err, result) => {
         if(err) throw err;
-         console.log('registered succesfully!');
-        res.json(req.body).status(200);
+
+        db.query( 'INSERT INTO history (item, user, price, date, action) VALUES (?, ?, ?, CURRENT_TIMESTAMP(), ?);', [item, user, price, 'rekisteröinti'], (err, result) =>{
+            if(err) throw err;
+            console.log('..registering logged succesfully!');
+            res.json({message:'Query OK'}).status(200);
+        });
     });
 
 });
@@ -121,7 +124,7 @@ app.post('/post/buyItem', (req, res) => {
     let item = req.body.item;
     let price = req.body.price;
     console.log(user + ' trying to buy ' + item + '..');
-    db.query( 'INSERT INTO history (item, user, price, date) VALUES (?, ?, ?, CURRENT_TIMESTAMP());', [item, user, price], (err, result) =>{
+    db.query( 'INSERT INTO history (item, user, price, date, action) VALUES (?, ?, ?, CURRENT_TIMESTAMP(), ?);', [item, user, price, 'osto'], (err, result) =>{
         if(err) throw err;
         console.log('..transaction logged succesfully!');
         res.json({message:'Query OK'}).status(200);
@@ -136,18 +139,121 @@ app.post('/post/item', (req, res) => {
     db.query( 'INSERT INTO list (item, user, date) VALUES (?, ?, CURRENT_TIMESTAMP());', [item, user],  (err, result) => {
         if(err) throw err;
         console.log('..succesfully added!');
-        res.json({message:'Query OK'}).status(200);
+
+        db.query( 'INSERT INTO history (item, user, date, action) VALUES (?, ?, CURRENT_TIMESTAMP(), ?);', [item, user, 'lisäys'], (err, result) =>{
+            if(err) throw err;
+
+            console.log('adding an item logged succesfully!');
+            res.json({message:'Query OK'}).status(200);
+        });
     });
+});
+
+app.put('/put/item', (req, res) =>{
+    console.log(req.body.body);
+    let itemChanged = req.body.itemChanged;
+    let item = req.body.item;
+    let user = req.body.user;
+    let price = req.body.price;
+    let previousPrice = req.body.previousPrice;
+
+    // - if a item AND price were updated, then ->
+    // - if I would've had time, I should've made a rollback system (in case one of the queries doesn't go through for some reason)
+    // - but since I don't have a lot of extra time for that, I just made the system so watertight that it shouldn't ever fail (because the scope of this project is so small)
+
+    // - first it updates the prices table with the new information
+    // - then it updates the current shopping list with the new information
+    // - then it updates the history with the new prices and names
+    // - lastly it logs the update action itself into the history.
+
+    if(item && price) {
+        db.query('UPDATE prices SET item=(?), price=(?) WHERE item=(?)', [item, price, itemChanged], (err, result) => {
+            if(err) throw err;
+
+            db.query('UPDATE list SET item=(?) WHERE item=(?)', [item, itemChanged], (err, result) => {
+                if(err) throw err;
+
+                db.query( 'UPDATE history SET item=(?), price=(?) WHERE item=(?)', [item, price, itemChanged], (err, result) => {
+                    if (err) throw err;
+
+                    db.query( 'INSERT INTO history (item, previousName, user, price, previousPrice, date, action) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP(), ?);', [item, itemChanged, user, price, previousPrice, 'päivitys'], (err, result) =>{
+                        if(err) throw err;
+                        console.log('..update logged succesfully!');
+                        res.json({message:'Query OK'}).status(200);
+                    });
+                })
+            })
+        })
+    }
+
+    // - if only the price was updated, then ->
+
+    else if(!item && price){
+        db.query('UPDATE prices SET price=(?) WHERE item=(?)', [price, itemChanged], (err, result) => {
+            if(err) throw err;
+            console.log('update item price succesful!');
+
+            db.query( 'UPDATE history SET price=(?) WHERE item=(?)', [price, itemChanged], (err, result) => {
+                if (err) throw err;
+
+                db.query( 'INSERT INTO history (item, user, price, previousPrice, date, action) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP(), ?);', [itemChanged, user, price, previousPrice, 'päivitys'], (err, result) =>{
+                    if(err) throw err;
+                    console.log('..update logged succesfully!');
+                    res.json({message:'Query OK'}).status(200);
+                });
+            })
+
+        })
+    }
+
+    // - if only the item name was updated, then ->
+
+    else {
+        db.query('UPDATE prices SET item=(?) WHERE item=(?)', [item, itemChanged], (err, result) => {
+            if (err) throw err;
+
+            db.query('UPDATE list SET item=(?) WHERE item=(?)', [item, itemChanged], (err, result) => {
+                if(err) throw err;
+                console.log('list updated');
+
+                db.query( 'UPDATE history SET item=(?) WHERE item=(?)', [item, itemChanged], (err, result) => {
+                    if (err) throw err;
+
+                    db.query( 'INSERT INTO history (item, previousName, user, date, action) VALUES (?, ?, ?,  CURRENT_TIMESTAMP(), ?);', [item, itemChanged, user, 'päivitys'], (err, result) =>{
+                        if(err) throw err;
+                        console.log('..update logged succesfully!');
+                        res.json({message:'Query OK'}).status(200);
+                    });
+                });
+            });
+        })
+    }
 });
 
 app.delete('/delete/item', (req, res) => {
    let id = req.body.id;
    let item = req.body.item;
-    console.log('somebody trying to delete ' + item + ' from the list..');
+   let user = req.body.user;
+   let purchase = req.body.purchase;
+    console.log(user + ' trying to delete ' + item + ' from the list..');
    db.query('DELETE FROM list WHERE id=?', [id], (err, result) => {
        if(err) throw err;
-      console.log('..deletion succesful!');
-       res.json(req.body).status(200);
+
+       // - if the item wasnt bought but deleted, log the action
+       // - this is to prevent logging the deletion WHEN buying an item -- it's unneccesery to log a deletion in that context.
+
+       if(!purchase){
+           db.query( 'INSERT INTO history (item, user, date, action) VALUES (?, ?, CURRENT_TIMESTAMP(), ?);', [item, user, 'poisto'], (err, result) =>{
+               if(err) throw err;
+
+               console.log('..deletion logged succesfully!');
+               res.json({message:'Query OK'}).status(200);
+           });
+       }else{
+           console.log('..deletion  succesful!');
+           res.json({message:'Query OK'}).status(200);
+       }
+
    })
 });
 
