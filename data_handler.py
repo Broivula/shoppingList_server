@@ -8,7 +8,7 @@ import datetime
 import os
 from collections import Counter
 
-r = requests.get('http://192.168.8.101/node/get/history')
+r = requests.get('http://13.ip-51-75-16.eu:2222/get/history')
 history = r.json()
 
 
@@ -18,7 +18,7 @@ history = r.json()
 def getHelinKulutus():
 	helin_kulutus = 0
 	for entry in history:
-		if entry['user'] =='Heli':
+		if entry['user'] =='Heli' and entry['action']=='osto':
 			helin_kulutus +=  entry['price']
 
 	return round(helin_kulutus, 2)
@@ -28,7 +28,7 @@ def getHelinKulutus():
 def getEliasKulutus():
 	elias_kulutus = 0
 	for entry in history:
-		if entry['user'] =='Elias':
+		if entry['user'] =='Elias' and entry['action']=='osto' :
 			elias_kulutus +=  entry['price']
 
 	return round(elias_kulutus,2)
@@ -40,7 +40,7 @@ def make_autopct(pct,data):
 def parseHistory(user, column):
 	data=[]
 	for entry in history:
-		if entry['user'] == user:
+		if entry['user'] == user and entry['action']=='osto':
 			data.append(entry[column])
 
 	return data
