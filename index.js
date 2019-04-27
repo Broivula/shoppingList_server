@@ -2,12 +2,11 @@
 require('dotenv').config();
 const express = require('express');
 const app = express();
-const multer = require('multer');
 const mysql = require('mysql');
 const bodyParser = require('body-parser');
 const fs = require('fs');
 const spawn = require('child_process').spawn;
-
+const multer = require('multer');
 
 const db = mysql.createConnection({
     host: process.env.DB_HOST,
@@ -18,7 +17,29 @@ const db = mysql.createConnection({
 
 const ip_data = {
    ip: process.env.IP
-}
+};
+
+const storage = multer.diskStorage({
+    destination:  (req, file, cb) => {
+
+        // so this is where we save the image data
+        // first we need to check if a folder with the current date format already exists
+        if(!fs.existsSync(req.body.folder)){
+            fs.mkdirSync(req.body.folder)
+        }
+        cb(null, req.body.folder)
+    },
+
+    filename: (req, file, cb) => {
+
+        // now we name the incoming picture file of the potato field
+        console.log(file.originalname);
+        cb(null, file.originalname)
+    }
+});
+
+const upload = multer({storage: storage});
+
 
 const server = require('http').createServer(app);
 const io = require('socket.io').listen(server);
@@ -152,6 +173,19 @@ app.post('/post/item', (req, res) => {
         });
     });
 });
+
+
+// - this if for a different app, just gonna use the same server to execute this cause fuck you
+app.post('/post/picture', upload.single('image'), (req, res, next) => {
+
+    //handle the pic data
+    console.log(req.file);
+    console.log(req.body.folder);
+    res.json({message:'Upload succesfull'})
+    
+
+})
+
 
 app.put('/put/item', (req, res) =>{
     console.log(req.body.body);
