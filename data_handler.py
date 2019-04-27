@@ -7,8 +7,17 @@ import matplotlib.pyplot as plt
 import datetime
 import os
 from collections import Counter
+from os.path import join, dirname
+from dotenv import load_dotenv
 
-r = requests.get('http://13.ip-51-75-16.eu:2222/get/history')
+
+# setting up the dotenv..
+dotenv_path = join(dirname(__file__), '.env')
+load_dotenv(dotenv_path)
+ip = os.getenv('IP')
+
+# making the request for the data
+r = requests.get('http://' + ip + ':2222/get/history')
 history = r.json()
 
 
@@ -87,7 +96,6 @@ doKulutusPieChart(date)
 doMostBoughtItemBarChart('Elias', date)
 doMostBoughtItemBarChart('Heli', date)
 print('done')
-#print(Counter(parseHistory('Elias', 'item')).items().most_common(3))
 sys.stdout.flush()
 
 
