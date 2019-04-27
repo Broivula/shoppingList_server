@@ -176,15 +176,58 @@ app.post('/post/item', (req, res) => {
 
 
 // - this if for a different app, just gonna use the same server to execute this cause fuck you
+
 app.post('/post/picture', upload.single('image'), (req, res, next) => {
 
     //handle the pic data
     console.log(req.file);
     console.log(req.body.folder);
     res.json({message:'Upload succesfull'})
-    
+});
 
-})
+app.get('/get/potatoImages', (req, res) => {
+    var folderPath = 'uploads/potato_field/';
+    let imagePaths ={};
+    var promises = [];
+    var tempArr =[];
+    var search = (path) => {
+        if(path){
+            return new Promise((resolve, reject) => {
+                fs.readdir(folderPath + path + '/',(err, files) => {
+                    resolve(files)
+                })
+            })
+
+        }else{
+            return new Promise((resolve, reject)=> {
+                fs.readdir(folderPath, (err, folders) => {
+                    resolve(folders)
+                })
+            })
+        }
+
+    };
+
+    search().then((results) => {
+        for(let path of results){
+            promises.push(new Promise((resolve, reject)=> {
+                search(path).then((files) =>{imagePaths[path] = files;resolve()})
+            }))
+        }
+        Promise.all(promises).then(() => {
+         //   console.log(imagePaths);
+            res.json(imagePaths)
+        })
+    })
+
+
+});
+
+app.get('/get/potatoImages/:dest', (req, res) => {
+    console.log('getting an image-');
+    var file_path = req.params.dest.replace(/!/g, "/");
+    res.sendFile(file_path,  {root:__dirname + "/uploads/potato_field/"});
+});
 
 
 app.put('/put/item', (req, res) =>{
