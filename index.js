@@ -16,6 +16,10 @@ const db = mysql.createConnection({
     database: process.env.DB
 });
 
+const ip_data = {
+   ip: process.env.IP
+}
+
 const server = require('http').createServer(app);
 const io = require('socket.io').listen(server);
 
@@ -80,9 +84,9 @@ app.get('/get/history', (req, res) => {
 
 app.get('/get/history/images', (req, res) => {
    console.log('getting stat images routes');
-   let path_01 = { file_path:'http://' + process.env.IP + ':2222/get/history/images/kulutus_all_time.png'};
-   let path_02 = { file_path: 'http://' + process.env.IP + ':2222/get/history/images/elias_ostetuimmat.png'};
-    let path_03 = { file_path: 'http://' + process.env.IP + ':2222/get/history/images/heli_ostetuimmat.png'};
+   let path_01 = { file_path:'http://' + ip_data.ip + ':2222/get/history/images/kulutus_all_time.png'};
+   let path_02 = { file_path: 'http://' + ip_data.ip + ':2222/get/history/images/elias_ostetuimmat.png'};
+    let path_03 = { file_path: 'http://' + ip_data.ip + ':2222/get/history/images/heli_ostetuimmat.png'};
     const process = spawn('python3', ["data_handler.py"]);
     process.stdout.on('data', (data) => {
         res.json([path_01, path_02, path_03])
