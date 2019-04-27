@@ -24,6 +24,7 @@ const storage = multer.diskStorage({
 
         // so this is where we save the image data
         // first we need to check if a folder with the current date format already exists
+	console.log(req.body.folder)
         if(!fs.existsSync(req.body.folder)){
             fs.mkdirSync(req.body.folder)
         }
@@ -210,6 +211,7 @@ app.get('/get/potatoImages', (req, res) => {
 
     search().then((results) => {
         for(let path of results){
+	console.log(results)
             promises.push(new Promise((resolve, reject)=> {
                 search(path).then((files) =>{imagePaths[path] = files;resolve()})
             }))
