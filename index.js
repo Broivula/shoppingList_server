@@ -188,7 +188,7 @@ app.post('/post/picture', upload.single('image'), (req, res, next) => {
 
 app.get('/get/potatoImages', (req, res) => {
     var folderPath = 'uploads/potato_field/';
-    let imagePaths ={};
+    let imagePaths =[];
     var promises = [];
     var tempArr =[];
     var search = (path) => {
@@ -213,11 +213,17 @@ app.get('/get/potatoImages', (req, res) => {
         for(let path of results){
 	//console.log(results)
             promises.push(new Promise((resolve, reject)=> {
-                search(path).then((files) =>{imagePaths[path] = files;resolve()})
+                search(path).then((files) =>{
+		let dataObj = {};
+		dataObj["date"] = path;
+		dataObj["images"] = files;
+		//console.log(dataObj);
+		imagePaths.push(dataObj)
+		resolve()})
             }))
         }
         Promise.all(promises).then(() => {
-         //   console.log(imagePaths);
+          //  console.log(imagePaths);
             res.json(imagePaths)
         })
     })
