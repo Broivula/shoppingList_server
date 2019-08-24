@@ -181,8 +181,8 @@ app.post('/post/item', (req, res) => {
 app.post('/post/picture', upload.single('image'), (req, res, next) => {
 
     //handle the pic data
-    console.log(req.file);
-    console.log(req.body.folder);
+    console.log("new image posted succesfully");
+//    console.log(req.body.folder);
     res.json({message:'Upload succesfull'})
 });
 
@@ -211,7 +211,7 @@ app.get('/get/potatoImages', (req, res) => {
 
     search().then((results) => {
         for(let path of results){
-	console.log(results)
+	//console.log(results)
             promises.push(new Promise((resolve, reject)=> {
                 search(path).then((files) =>{imagePaths[path] = files;resolve()})
             }))
@@ -226,7 +226,7 @@ app.get('/get/potatoImages', (req, res) => {
 });
 
 app.get('/get/potatoImages/:dest', (req, res) => {
-    console.log('getting an image-');
+   // console.log('getting an image-');
     var file_path = req.params.dest.replace(/!/g, "/");
     res.sendFile(file_path,  {root:__dirname + "/uploads/potato_field/"});
 });
