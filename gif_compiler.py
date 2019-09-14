@@ -20,6 +20,7 @@ def get_img_paths():
 			if(brightness > lower_threshold and brightness < upper_threshold):
 				#picture is good, add it to the list
 				img_paths.append(imgpath)
+				print(imgpath)
 
 
 
@@ -45,8 +46,8 @@ def progress(index, length):
 
 
 get_img_paths()
-compile_gif(len(img_paths))
-print('all done!')
+#compile_gif(len(img_paths))
+#print('all done!')
 
 
 
