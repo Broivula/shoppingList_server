@@ -231,11 +231,17 @@ app.get('/get/potatoImages', (req, res) => {
 
 });
 
+app.get('/get/potatoImages/timelapse', (req, res)=>{
+    res.sendFile({root:__dirname + "/uploads/timelapse.gif"})
+})
+
 app.get('/get/potatoImages/:dest', (req, res) => {
    // console.log('getting an image-');
     var file_path = req.params.dest.replace(/!/g, "/");
     res.sendFile(file_path,  {root:__dirname + "/uploads/potato_field/"});
 });
+
+
 
 
 app.put('/put/item', (req, res) =>{
