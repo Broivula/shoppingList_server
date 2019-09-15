@@ -2,25 +2,28 @@ import os
 import sys
 import imageio
 import numpy as np
+import time
 
 lower_threshold = 30
 upper_threshold = 160
 img_paths = []
 root = os.getcwd()
-folder_path = os.path.join(root, "uploads")
+folder_path = os.path.join(root, "uploads/potato_field")
 
 
 
 def get_img_paths():
+	try:
+		for path, subdirs, files in os.walk(folder_path):
+			for name in files:
+				imgpath = (os.path.join(path, name))
+				brightness = calc_brightness(imgpath)
+				if(brightness > lower_threshold and brightness < upper_threshold):
+					#picture is good, add it to the list
+					img_paths.append(imgpath)
 
-	for path, subdirs, files in os.walk(folder_path):
-		for name in files:
-			imgpath = (os.path.join(path, name))
-			brightness = calc_brightness(imgpath)
-			if(brightness > lower_threshold and brightness < upper_threshold):
-				#picture is good, add it to the list
-				img_paths.append(imgpath)
-				print(imgpath)
+	except:
+		print("something fucked up, yo")
 
 
 
@@ -45,8 +48,13 @@ def progress(index, length):
 	return str(int((index/length) * 100))
 
 
+def sorting_function():
+	img_paths.sort(key=lambda file_date: time.ctime(os.path.getctime(file_date)))
+
+
 get_img_paths()
-#compile_gif(len(img_paths))
+sorting_function()
+compile_gif(len(img_paths))
 #print('all done!')
 
 
